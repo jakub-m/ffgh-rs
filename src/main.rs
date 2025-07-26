@@ -64,7 +64,9 @@ async fn main() -> Result<()> {
     control::set_override(true);
 
     if cli.verbose {
-        env_logger::init();
+        env_logger::Builder::from_default_env()
+            .filter_level(log::LevelFilter::Info)
+            .init();
     }
 
     let default_state_dir = get_default_state_dir()?;
@@ -86,6 +88,7 @@ async fn main() -> Result<()> {
             Config::default()
         })
     } else {
+        log::info!("Config file {} does not exist, using default", config_path);
         Config::default()
     };
 

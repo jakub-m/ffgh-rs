@@ -35,7 +35,7 @@ pub struct PullRequest {
     pub updated_at: DateTime<Utc>,
     pub url: String,
     pub state: String,
-    #[serde(rename = "_meta")]
+    #[serde(rename = "_meta", default)]
     pub meta: Meta,
 }
 

@@ -38,7 +38,9 @@ impl<S: Storage> Synchronizer<S> {
         let mut queried_prs: HashMap<String, Vec<PullRequest>> = HashMap::new();
         
         for query in &config.queries {
+            log::info!("Querying: {} ({})", query.query_name, query.github_arg);
             let prs = get_prs(&query.github_arg, &query.query_name, query.mute).await?;
+            log::info!("Found {} PRs for query '{}'", prs.len(), query.query_name);
             for pr in prs {
                 queried_prs.entry(pr.url.clone()).or_insert_with(Vec::new).push(pr);
             }
@@ -62,8 +64,9 @@ impl<S: Storage> Synchronizer<S> {
             unique_prs.push(selected);
         }
         
+        log::info!("Storing {} unique pull requests", unique_prs.len());
         self.storage.reset_pull_requests(unique_prs.clone())?;
-        log::info!("Updated {} pull requests", unique_prs.len());
+        log::info!("Successfully updated {} pull requests", unique_prs.len());
         
         Ok(())
     }
@@ -94,7 +97,7 @@ fn select_pr_with_attribution_priority(
 }
 
 async fn get_prs(query: &str, meta_label: &str, mute: bool) -> Result<Vec<PullRequest>> {
-    log::info!("Get PRs for: {}", query);
+    log::debug!("Executing gh command: gh search prs --draft=false --state=open {} --json {}", query, JSON_FIELDS);
     
     let output = Command::new("gh")
         .args(&[
