@@ -2,7 +2,9 @@ use anyhow::Result;
 use chrono::{Duration, Utc};
 use clap::{Parser, Subcommand};
 use colored::control;
-use ffgh::{config::Config, fzf, storage::FileStorage, storage::Storage, sync::Synchronizer, util, xbar};
+use ffgh::{
+    config::Config, fzf, storage::FileStorage, storage::Storage, sync::Synchronizer, util, xbar,
+};
 use std::env;
 use std::fs;
 use std::io;
@@ -63,11 +65,14 @@ async fn main() -> Result<()> {
     // Force colors to be enabled, similar to Go version's color.NoColor = false
     control::set_override(true);
 
-    if cli.verbose {
-        env_logger::Builder::from_default_env()
-            .filter_level(log::LevelFilter::Info)
-            .init();
-    }
+    let log_level = if cli.verbose {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+    env_logger::Builder::from_default_env()
+        .filter_level(log_level)
+        .init();
 
     let default_state_dir = get_default_state_dir()?;
     let state_path = cli.state_path.unwrap_or(default_state_dir.clone());
@@ -130,7 +135,13 @@ async fn main() -> Result<()> {
             println!("{} | {}", sync_str, user_state.settings.view_mode);
 
             let mut prs = prs;
-            fzf::print_pull_requests(&mut io::stdout(), terminal_width, &mut prs, &user_state, &config)?;
+            fzf::print_pull_requests(
+                &mut io::stdout(),
+                terminal_width,
+                &mut prs,
+                &user_state,
+                &config,
+            )?;
         }
         Commands::ShowCompactSummary => {
             let prs = storage.get_pull_requests()?;
@@ -175,7 +186,11 @@ async fn main() -> Result<()> {
             let mut user_state = storage.get_user_state()?;
             let old_mode = user_state.settings.view_mode.clone();
             user_state.settings.view_mode = fzf::cycle_view_mode(&old_mode);
-            log::info!("Changed view mode from {} to {}", old_mode, user_state.settings.view_mode);
+            log::info!(
+                "Changed view mode from {} to {}",
+                old_mode,
+                user_state.settings.view_mode
+            );
             storage.write_user_state(&user_state)?;
         }
         Commands::CycleNote { url } => {
