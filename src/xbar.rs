@@ -31,18 +31,22 @@ pub fn print_compact_summary<W: Write>(
         }
     }
 
-    let mut parts = vec![format!("GH{}", total_count)];
-
-    if new_count > 0 {
-        parts.push(format!("N{}", new_count));
-    }
-    if updated_count > 0 {
-        parts.push(format!("U{}", updated_count));
-    }
-    if commented_count > 0 {
-        parts.push(format!("C{}", commented_count));
-    }
+    //let mut parts = vec![format!("GH{}", total_count)];
+    //if new_count > 0 {
+    //    parts.push(format!("N{}", new_count));
+    //}
+    //if updated_count > 0 {
+    //    parts.push(format!("U{}", updated_count));
+    //}
+    //if commented_count > 0 {
+    //    parts.push(format!("C{}", commented_count));
+    //}
+    let mut parts = vec![format!("{}", total_count)];
+    parts.push(format!("{}", new_count));
+    parts.push(format!("{}", updated_count));
+    parts.push(format!("{}", commented_count));
 
     write!(writer, "{}", parts.join(":"))?;
     Ok(())
 }
+

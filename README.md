@@ -4,6 +4,13 @@ Quick access to GitHub PRs from terminal.
 
 `ffgh-rs` was rewritten from the original [`ffgh` in Go](https://github.com/jakub-m/ffgh) to Rust using Claude.
 
+
+## Installation
+
+```bash
+cargo install --path .
+```
+
 ## How to use
 
 Run sync in terminal:
