@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::{Duration, Utc};
 use clap::{Parser, Subcommand};
+use colored::control;
 use ffgh::{config::Config, fzf, storage::FileStorage, storage::Storage, sync::Synchronizer, util, xbar};
 use std::env;
 use std::fs;
@@ -58,6 +59,9 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    // Force colors to be enabled, similar to Go version's color.NoColor = false
+    control::set_override(true);
 
     if cli.verbose {
         env_logger::init();

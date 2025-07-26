@@ -4,11 +4,12 @@ set -eu
 set -o pipefail
 
 base=$(cd $(dirname $(realpath $0)) && pwd)
-bin="${base}/bin/ffgh-bin"
+# bin="${base}/bin/ffgh-bin"
+bin="${base}/target/debug/ffgh-bin"
 
 temp=$(mktemp)
 function cleanup {
-	rm -f $temp
+  rm -f $temp
 
 }
 trap cleanup EXIT
@@ -16,19 +17,17 @@ trap cleanup EXIT
 export TERMINAL_WIDTH=$(tput cols)
 
 fzf \
-	--ansi \
-	--multi \
-	--with-nth=2.. \
-	--preview-window=top:wrap \
-	--preview "$bin show-pr {1}" \
-	--header-lines=1 \
-	--bind "start:reload:($bin -v fzf)"\
-	--bind "ctrl-r:reload($bin mark-open -e {1} || $bin mark-mute {1} && $bin fzf)+down" \
-	--bind "ctrl-v:reload($bin cycle-view-mode && $bin fzf)" \
-	--bind "ctrl-o:reload($bin mark-open {1} && open {1} && $bin fzf)+down" \
-	--bind "ctrl-a:reload($bin cycle-note {1} && $bin fzf)" \
-	--bind "ctrl-n:execute(vim $temp &> /dev/tty && $bin add-note {1} $temp)+reload:($bin fzf)" \
-	| \
-cut -f1 | \
-xargs -n1 -I{} bash -c "$bin mark-open {} && open {}"
-
+  --ansi \
+  --multi \
+  --with-nth=2.. \
+  --preview-window=top:wrap \
+  --preview "$bin show-pr {1}" \
+  --header-lines=1 \
+  --bind "start:reload:($bin -v fzf)" \
+  --bind "ctrl-r:reload($bin mark-open -e {1} || $bin mark-mute {1} && $bin fzf)+down" \
+  --bind "ctrl-v:reload($bin cycle-view-mode && $bin fzf)" \
+  --bind "ctrl-o:reload($bin mark-open {1} && open {1} && $bin fzf)+down" \
+  --bind "ctrl-a:reload($bin cycle-note {1} && $bin fzf)" \
+  --bind "ctrl-n:execute(vim $temp &> /dev/tty && $bin add-note {1} $temp)+reload:($bin fzf)" |
+  cut -f1 |
+  xargs -n1 -I{} bash -c "$bin mark-open {} && open {}"
