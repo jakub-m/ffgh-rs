@@ -4,7 +4,8 @@ set -eu
 set -o pipefail
 
 base=$(cd $(dirname $(realpath $0)) && pwd)
-bin="${base}/target/release/ffgh-bin"
+#bin="${base}/target/release/ffgh-bin"
+bin="ffgh-bin"
 
 temp=$(mktemp)
 function cleanup {
