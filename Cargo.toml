@@ -1,6 +1,21 @@
 [package]
-name = "ffgh-rs"
+name = "ffgh"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+
+[[bin]]
+name = "ffgh"
+path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+anyhow = "1.0"
+colored = "2.0"
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.10"
+dirs = "5.0"
