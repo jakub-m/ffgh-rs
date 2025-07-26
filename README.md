@@ -2,6 +2,7 @@
 
 Quick access to GitHub PRs from terminal.
 
+`ffgh-rs` was rewritten from the original [`ffgh` in Go](https://github.com/jakub-m/ffgh) to Rust using Claude.
 
 ## How to use
 
