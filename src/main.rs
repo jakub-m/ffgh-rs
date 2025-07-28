@@ -14,6 +14,7 @@ const OUT_OF_SYNC_PERIOD_MINUTES: i64 = 5;
 
 #[derive(Parser)]
 #[command(name = "ffgh")]
+#[command(version)]
 #[command(about = "Utility to synchronize and display state of GitHub PRs")]
 struct Cli {
     #[command(subcommand)]

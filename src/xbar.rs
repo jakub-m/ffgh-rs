@@ -41,12 +41,17 @@ pub fn print_compact_summary<W: Write>(
     //if commented_count > 0 {
     //    parts.push(format!("C{}", commented_count));
     //}
-    let mut parts = vec![format!("{}", total_count)];
-    parts.push(format!("{}", new_count));
-    parts.push(format!("{}", updated_count));
-    parts.push(format!("{}", commented_count));
-
-    write!(writer, "{}", parts.join(":"))?;
+    let mut parts = Vec::new();
+    parts.push(format!("{}", total_count));
+    if new_count > 0 {
+        parts.push(format!("n{}", new_count));
+    }
+    if updated_count > 0 {
+        parts.push(format!("u{}", updated_count));
+    }
+    if commented_count > 0 {
+        parts.push(format!("c{}", commented_count));
+    }
+    write!(writer, "[{}]", parts.join(":"))?;
     Ok(())
 }
-
