@@ -5,5 +5,5 @@ bin=ffgh-bin
 while [ 1 ]; do
   $bin -v sync || true
   echo "RESTART"
-  sleep 1
+  sleep 60
 done
