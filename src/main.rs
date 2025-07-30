@@ -88,13 +88,13 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|| default_config_path.to_string_lossy().to_string());
 
     let config = if Path::new(&config_path).exists() {
-        log::info!("Reading config from {}", config_path);
+        log::debug!("Reading config from {}", config_path);
         Config::from_file(&config_path).unwrap_or_else(|e| {
             log::warn!("Failed to read config, using default: {}", e);
             Config::default()
         })
     } else {
-        log::info!("Config file {} does not exist, using default", config_path);
+        log::debug!("Config file {} does not exist, using default", config_path);
         Config::default()
     };
 
@@ -187,7 +187,7 @@ async fn main() -> Result<()> {
             let mut user_state = storage.get_user_state()?;
             let old_mode = user_state.settings.view_mode.clone();
             user_state.settings.view_mode = fzf::cycle_view_mode(&old_mode);
-            log::info!(
+            log::debug!(
                 "Changed view mode from {} to {}",
                 old_mode,
                 user_state.settings.view_mode
@@ -210,7 +210,7 @@ async fn main() -> Result<()> {
             annotations.push(String::new()); // Add empty note at the end
 
             let new_note = util::cycle(current_note, &annotations);
-            log::info!("Cycling note from '{}' to '{}'", current_note, new_note);
+            log::debug!("Cycling note from '{}' to '{}'", current_note, new_note);
             storage.add_note(&url, &new_note)?;
         }
     }

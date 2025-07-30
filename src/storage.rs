@@ -40,19 +40,19 @@ impl FileStorage {
 
     fn write_at_once(&self, target: &str, data: &[u8]) -> Result<()> {
         let temp_path = format!("{}.temp", target);
-        
+
         // Remove existing temp file if it exists
         let _ = fs::remove_file(&temp_path);
-        
+
         // Write to temp file
         fs::write(&temp_path, data)?;
-        
+
         // Remove target file if it exists
         let _ = fs::remove_file(target);
-        
+
         // Rename temp to target
         fs::rename(&temp_path, target)?;
-        
+
         Ok(())
     }
 }
@@ -70,36 +70,37 @@ impl Storage for FileStorage {
     }
 
     fn mark_url_as_opened(&self, url: &str) -> Result<bool> {
-        log::info!("Mark opened {}", url);
+        log::debug!("Mark opened {}", url);
         let pr = self.get_pr_for_url(url)?;
         let mut user_state = self.get_user_state()?;
-        
+
         let mut pr_state = user_state.per_url.get(url).cloned().unwrap_or_default();
-        
-        if pr_state.opened_at.is_some() 
+
+        if pr_state.opened_at.is_some()
             && pr_state.opened_at == Some(pr.updated_at)
-            && pr_state.last_comment_count == pr.comments_count {
-            log::info!("PR state up to date, not marking it as opened");
+            && pr_state.last_comment_count == pr.comments_count
+        {
+            log::debug!("PR state up to date, not marking it as opened");
             return Ok(false);
         }
-        
-        log::info!("PR state changed so it's marked as opened");
+
+        log::debug!("PR state changed so it's marked as opened");
         pr_state.opened_at = Some(pr.updated_at);
         pr_state.last_comment_count = pr.comments_count;
         user_state.per_url.insert(url.to_string(), pr_state);
-        
+
         self.write_user_state(&user_state)?;
         Ok(true)
     }
 
     fn mark_url_as_muted(&self, url: &str) -> Result<()> {
-        log::info!("Mark muted {}", url);
+        log::debug!("Mark muted {}", url);
         let mut user_state = self.get_user_state()?;
         let mut pr_state = user_state.per_url.get(url).cloned().unwrap_or_default();
-        
+
         pr_state.is_mute = !pr_state.is_mute;
-        log::info!("Change mute state to {} {}", pr_state.is_mute, url);
-        
+        log::debug!("Change mute state to {} {}", pr_state.is_mute, url);
+
         user_state.per_url.insert(url.to_string(), pr_state);
         self.write_user_state(&user_state)
     }
@@ -108,7 +109,7 @@ impl Storage for FileStorage {
         if !Path::new(&self.user_state_path).exists() {
             return Ok(UserState::default());
         }
-        
+
         let content = fs::read_to_string(&self.user_state_path)?;
         let state: UserState = serde_json::from_str(&content)?;
         Ok(state)
@@ -127,13 +128,13 @@ impl Storage for FileStorage {
     }
 
     fn add_note(&self, url: &str, note: &str) -> Result<()> {
-        log::info!("Add note to URL {}: {}", url, note);
+        log::debug!("Add note to URL {}: {}", url, note);
         let mut user_state = self.get_user_state()?;
         let mut pr_state = user_state.per_url.get(url).cloned().unwrap_or_default();
-        
+
         pr_state.note = note.to_string();
         user_state.per_url.insert(url.to_string(), pr_state);
-        
+
         self.write_user_state(&user_state)
     }
 }
@@ -191,11 +192,11 @@ pub const IS_NEW: u8 = 1 << 2;
 
 pub fn get_pr_state_flags(pr: &PullRequest, pr_state: &PrState) -> u8 {
     let mut flags = 0;
-    
+
     if pr.comments_count > pr_state.last_comment_count {
         flags |= HAS_NEW_COMMENTS;
     }
-    
+
     if pr_state.opened_at.is_none() {
         flags |= IS_NEW;
     } else if let Some(opened_at) = pr_state.opened_at {
@@ -203,6 +204,7 @@ pub fn get_pr_state_flags(pr: &PullRequest, pr_state: &PrState) -> u8 {
             flags |= IS_UPDATED;
         }
     }
-    
+
     flags
 }
+

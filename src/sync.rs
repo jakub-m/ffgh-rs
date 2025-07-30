@@ -7,7 +7,8 @@ use std::process::Command;
 use std::time::Duration;
 use tokio::time;
 
-const JSON_FIELDS: &str = "author,body,commentsCount,createdAt,id,number,repository,state,title,updatedAt,url";
+const JSON_FIELDS: &str =
+    "author,body,commentsCount,createdAt,id,number,repository,state,title,updatedAt,url";
 
 pub struct Synchronizer<S: Storage> {
     storage: S,
@@ -33,27 +34,30 @@ impl<S: Storage> Synchronizer<S> {
     }
 
     pub async fn run_once(&self, config: &Config) -> Result<()> {
-        log::info!("Run gh search");
-        
+        log::debug!("Run gh search");
+
         let mut queried_prs: HashMap<String, Vec<PullRequest>> = HashMap::new();
-        
+
         for query in &config.queries {
-            log::info!("Querying: {} ({})", query.query_name, query.github_arg);
+            log::debug!("Querying: {} ({})", query.query_name, query.github_arg);
             let prs = get_prs(&query.github_arg, &query.query_name, query.mute).await?;
-            log::info!("Found {} PRs for query '{}'", prs.len(), query.query_name);
+            log::debug!("Found {} PRs for query '{}'", prs.len(), query.query_name);
             for pr in prs {
-                queried_prs.entry(pr.url.clone()).or_insert_with(Vec::new).push(pr);
+                queried_prs
+                    .entry(pr.url.clone())
+                    .or_insert_with(Vec::new)
+                    .push(pr);
             }
         }
-        
-        log::info!("Got {} PRs (with duplicates)", queried_prs.len());
-        log::info!("Use attribution order: {:?}", config.attribution_order);
-        
+
+        log::debug!("Got {} PRs (with duplicates)", queried_prs.len());
+        log::debug!("Use attribution order: {:?}", config.attribution_order);
+
         let mut attribution_priority: HashMap<String, usize> = HashMap::new();
         for (i, query_name) in config.attribution_order.iter().enumerate() {
             attribution_priority.insert(query_name.clone(), i);
         }
-        
+
         let mut unique_prs = Vec::new();
         for prs in queried_prs.values() {
             let selected = if prs.len() == 1 {
@@ -63,11 +67,11 @@ impl<S: Storage> Synchronizer<S> {
             };
             unique_prs.push(selected);
         }
-        
-        log::info!("Storing {} unique pull requests", unique_prs.len());
+
+        log::debug!("Storing {} unique pull requests", unique_prs.len());
         self.storage.reset_pull_requests(unique_prs.clone())?;
-        log::info!("Successfully updated {} pull requests", unique_prs.len());
-        
+        log::debug!("Successfully updated {} pull requests", unique_prs.len());
+
         Ok(())
     }
 }
@@ -77,7 +81,7 @@ fn select_pr_with_attribution_priority(
     attribution_priority: &HashMap<String, usize>,
 ) -> PullRequest {
     let mut selected = prs[0].clone();
-    
+
     for pr in prs {
         let selected_priority = attribution_priority
             .get(&selected.meta.label)
@@ -87,21 +91,26 @@ fn select_pr_with_attribution_priority(
             .get(&pr.meta.label)
             .copied()
             .unwrap_or(usize::MAX);
-            
+
         if pr_priority < selected_priority {
             selected = pr.clone();
         }
     }
-    
+
     selected
 }
 
 async fn get_prs(query: &str, meta_label: &str, mute: bool) -> Result<Vec<PullRequest>> {
-    log::debug!("Executing gh command: gh search prs --draft=false --state=open {} --json {}", query, JSON_FIELDS);
-    
+    log::debug!(
+        "Executing gh command: gh search prs --draft=false --state=open {} --json {}",
+        query,
+        JSON_FIELDS
+    );
+
     let output = Command::new("gh")
         .args(&[
-            "search", "prs",
+            "search",
+            "prs",
             "--draft=false",
             "--state=open",
             query,
@@ -109,22 +118,23 @@ async fn get_prs(query: &str, meta_label: &str, mute: bool) -> Result<Vec<PullRe
             JSON_FIELDS,
         ])
         .output()?;
-    
+
     if !output.status.success() {
         return Err(anyhow::anyhow!(
             "gh command failed: {}",
             String::from_utf8_lossy(&output.stderr)
         ));
     }
-    
+
     let mut prs: Vec<PullRequest> = serde_json::from_slice(&output.stdout)?;
-    
+
     for pr in &mut prs {
         pr.meta = Meta {
             label: meta_label.to_string(),
             default_mute: mute,
         };
     }
-    
+
     Ok(prs)
 }
+
