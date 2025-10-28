@@ -107,6 +107,8 @@ async fn main() -> Result<()> {
         .join(&storage.user_state_path)
         .to_string_lossy()
         .to_string();
+    log::debug!("prs_state_path {:?}", storage.prs_state_path);
+    log::debug!("user_state_path {:?}", storage.user_state_path);
 
     match cli.command {
         Commands::Sync { once } => {
