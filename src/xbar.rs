@@ -44,14 +44,14 @@ pub fn print_compact_summary<W: Write>(
     let mut parts = Vec::new();
     parts.push(format!("{}", total_count));
     if new_count > 0 {
-        parts.push(format!("n{}", new_count));
+        parts.push(format!("{}", new_count));
     }
     if updated_count > 0 {
-        parts.push(format!("u{}", updated_count));
+        parts.push(format!("{}", updated_count));
     }
     if commented_count > 0 {
-        parts.push(format!("c{}", commented_count));
+        parts.push(format!("{}", commented_count));
     }
-    write!(writer, "[{}]", parts.join(":"))?;
+    write!(writer, "{}", parts.join("\u{2016}"))?; // https://en.wikipedia.org/wiki/Vertical_bar
     Ok(())
 }
