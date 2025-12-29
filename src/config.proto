@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+
+package ffgh_config_proto_types;
+
+message Config {
+ repeated Query queries = 1;
+ repeated string display_order = 2;
+ repeated string attribution_order = 3;
+ repeated string annotations = 4;
+}
+
+message Query {
+    string github_arg = 1;
+    string query_name = 2;
+    string short_name = 3;
+    bool mute = 4;
+}
+

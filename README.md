@@ -55,7 +55,7 @@ by xbar. If the xbar shows `GH err!` it means that the state is out of sync. Che
 
 ## config
 
-You can define a config with GitHub queries. Run ffzf -h to see the default config.
+You can define a config with GitHub queries. Run ffgh -h to see the default config.
 
 `attribution_order` - it is used to assign query name to a PR if the same PR appears in the same query. This is useful
 if you want to show certain PR as "team PR" if you are part of the team, since the same PR will show up in the query
