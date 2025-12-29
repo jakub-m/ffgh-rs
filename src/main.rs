@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::{Parser, Subcommand};
 use colored::control;
@@ -92,10 +92,7 @@ async fn main() -> Result<()> {
 
     let config = if Path::new(&config_path).exists() {
         log::debug!("Reading config from {}", config_path);
-        Config::from_file(&config_path).unwrap_or_else(|e| {
-            log::warn!("Failed to read config, using default: {}", e);
-            Config::default()
-        })
+        Config::from_file(&config_path).with_context(|| format!("config path: {config_path}"))?
     } else {
         log::debug!("Config file {} does not exist, using default", config_path);
         Config::default()
