@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-
 package ffgh_config_proto_types;
 
 /// Configuration.
@@ -10,6 +9,7 @@ message Config {
  repeated string attribution_order = 3;
  repeated string annotations = 4;
  repeated Action actions = 5;
+ string compact_format = 6;
 }
 
 message Query {

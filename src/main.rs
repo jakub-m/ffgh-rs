@@ -155,11 +155,20 @@ async fn main() -> Result<()> {
             let user_state = storage.get_user_state()?;
 
             let out_of_sync_time = Utc::now() - Duration::minutes(OUT_OF_SYNC_PERIOD_MINUTES);
+            let compact_format = match &config.compact_format {
+                s if s.is_empty() => xbar::DEFAULT_FORMAT,
+                s => s,
+            };
             if let Some(sync_time) = storage.get_sync_time() {
                 if sync_time < out_of_sync_time {
                     print!("GH err!");
                 } else {
-                    xbar::print_compact_summary(&mut io::stdout(), &prs, &user_state)?;
+                    xbar::print_compact_summary(
+                        &mut io::stdout(),
+                        &prs,
+                        &user_state,
+                        compact_format,
+                    )?;
                 }
             } else {
                 print!("GH err!");
