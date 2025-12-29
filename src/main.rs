@@ -57,6 +57,8 @@ enum Commands {
     CycleViewMode,
     #[command(name = "cycle-note")]
     CycleNote { url: String },
+    #[command(name = "config-check")]
+    ConfigCheck,
 }
 
 #[tokio::main]
@@ -215,6 +217,14 @@ async fn main() -> Result<()> {
             log::debug!("Cycling note from '{}' to '{}'", current_note, new_note);
             storage.add_note(&url, &new_note)?;
         }
+        Commands::ConfigCheck => match serde_yaml::to_string(&config) {
+            Ok(s) => {
+                println!("{s}")
+            }
+            Err(e) => {
+                println!("FAILED! {e}")
+            }
+        },
     }
 
     Ok(())
