@@ -2,6 +2,7 @@ use anyhow::Result;
 use chrono::{Duration, Utc};
 use clap::{Parser, Subcommand};
 use colored::control;
+use ffgh::actions;
 use ffgh::{
     config::Config, fzf, storage::FileStorage, storage::Storage, sync::Synchronizer, util, xbar,
 };
@@ -139,17 +140,18 @@ async fn main() -> Result<()> {
 
             println!("{} | {}", sync_str, user_state.settings.view_mode);
 
-            let mut prs = prs;
+            let prs = prs;
             fzf::print_pull_requests(
                 &mut io::stdout(),
                 terminal_width,
-                &mut prs,
+                &prs,
                 &user_state,
                 &config,
             )?;
         }
         Commands::ShowCompactSummary => {
             let prs = storage.get_pull_requests()?;
+            let prs = actions::apply_actions(&config, &prs);
             let user_state = storage.get_user_state()?;
 
             let out_of_sync_time = Utc::now() - Duration::minutes(OUT_OF_SYNC_PERIOD_MINUTES);

@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::gh::PullRequest;
 use crate::storage::{get_pr_state_flags, UserState, HAS_NEW_COMMENTS, IS_NEW, IS_UPDATED};
-use crate::util;
+use crate::{actions, util};
 use chrono::{Duration, Utc};
 use colored::*;
 use std::collections::HashMap;
@@ -34,11 +34,13 @@ pub fn is_mute(user_state: &UserState, pr: &PullRequest) -> bool {
 pub fn print_pull_requests<W: Write>(
     writer: &mut W,
     terminal_width: usize,
-    prs: &mut Vec<PullRequest>,
+    prs: &Vec<PullRequest>,
     user_state: &UserState,
     config: &Config,
 ) -> Result<(), std::io::Error> {
     log::debug!("Use terminal width of {}", terminal_width);
+
+    let mut prs = actions::apply_actions(config, prs);
 
     let mut display_priority: HashMap<String, usize> = HashMap::new();
     for (i, query_name) in config.display_order.iter().enumerate() {
@@ -324,4 +326,3 @@ impl Display for PrettyDuration {
         Ok(())
     }
 }
-

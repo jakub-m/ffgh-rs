@@ -3,11 +3,13 @@ syntax = "proto3";
 
 package ffgh_config_proto_types;
 
+/// Configuration.
 message Config {
  repeated Query queries = 1;
  repeated string display_order = 2;
  repeated string attribution_order = 3;
  repeated string annotations = 4;
+ repeated Action actions = 5;
 }
 
 message Query {
@@ -17,3 +19,14 @@ message Query {
     bool mute = 4;
 }
 
+message Action {
+  /// The action is executed when ANY of the matches match.
+  repeated Match matches = 1;
+  /// Mute the PR.
+  bool mute = 2;
+}
+
+message Match {
+  /// A string that should match the subject of the PR.
+  string title = 1;
+}
