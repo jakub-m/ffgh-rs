@@ -111,7 +111,7 @@ pub fn print_pull_requests<W: Write>(
             if mute {
                 flag_string.push_str("U");
             } else {
-                flag_string.push_str(&"U".bright_white().to_string());
+                flag_string.push_str(&"U".magenta().to_string());
             }
         } else {
             flag_string.push_str(NBSP);
