@@ -3,11 +3,12 @@ use crate::gh::PullRequest;
 use crate::storage::{get_pr_state_flags, UserState, HAS_NEW_COMMENTS, IS_NEW, IS_UPDATED};
 use std::io::Write;
 
-const P_TOT: &str = "TOT";
-const P_NEW: &str = "NEW";
-const P_UPDATED: &str = "UPD";
-const P_COMMENTED: &str = "COM";
-pub const DEFAULT_FORMAT: &str = "t:TOT n:NEW u:UPD c:COM";
+const P_TOT: &str = "%TOT%";
+const P_NEW: &str = "%NEW%";
+const P_UPDATED: &str = "%UPD%";
+const P_COMMENTED: &str = "%COM%";
+const P_MAX_NEW_UPD_COM: &str = "%MAX_NEW_UPD_COM%";
+pub const DEFAULT_FORMAT: &str = "t:%TOT% n:%NEW% u:%UPD% c:%COM%";
 
 pub fn print_compact_summary<W: Write>(
     writer: &mut W,
@@ -38,17 +39,33 @@ pub fn print_compact_summary<W: Write>(
         }
     }
 
-    let mut s = format.to_string();
-    s = s.replace(P_TOT, &format!("{total_count}")).to_string();
-    s = s.replace(P_NEW, &format!("{new_count}")).to_string();
-    s = s
-        .replace(P_UPDATED, &format!("{updated_count}"))
-        .to_string();
-    s = s
-        .replace(P_COMMENTED, &format!("{commented_count}"))
-        .to_string();
+    let s = fill_placeholders(
+        format,
+        &vec![
+            (P_TOT, format!("{total_count}")),
+            (P_NEW, format!("{new_count}")),
+            (P_UPDATED, format!("{updated_count}")),
+            (P_COMMENTED, format!("{commented_count}")),
+            (
+                P_MAX_NEW_UPD_COM,
+                format!(
+                    "{}",
+                    vec![new_count, updated_count, commented_count]
+                        .iter()
+                        .max()
+                        .unwrap(),
+                ),
+            ),
+        ],
+    );
     write!(writer, "{s}")?;
     Ok(())
 }
 
-// const DEFAULT_FORMAT: &str = "NEW||UPDATED||COMMENTED";
+fn fill_placeholders(s: &str, fillers: &[(&str, String)]) -> String {
+    let mut s = s.to_string();
+    for (placeholder, value) in fillers {
+        s = s.replace(placeholder, &value).to_string();
+    }
+    s
+}
