@@ -8,6 +8,7 @@ const P_NEW: &str = "%NEW%";
 const P_UPDATED: &str = "%UPD%";
 const P_COMMENTED: &str = "%COM%";
 const P_MAX_NEW_UPD_COM: &str = "%MAX_NEW_UPD_COM%";
+const P_SUM_NEW_UPD_COM: &str = "%SUM_NEW_UPD_COM%";
 pub const DEFAULT_FORMAT: &str = "t:%TOT% n:%NEW% u:%UPD% c:%COM%";
 
 pub fn print_compact_summary<W: Write>(
@@ -54,6 +55,15 @@ pub fn print_compact_summary<W: Write>(
                         .iter()
                         .max()
                         .unwrap(),
+                ),
+            ),
+            (
+                P_SUM_NEW_UPD_COM,
+                format!(
+                    "{}",
+                    vec![new_count, updated_count, commented_count]
+                        .iter()
+                        .sum::<i32>(),
                 ),
             ),
         ],
