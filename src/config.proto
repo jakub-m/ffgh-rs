@@ -22,8 +22,8 @@ message Query {
 message Action {
   /// The action is executed when ANY of the matches match.
   repeated Match matches = 1;
-  /// Mute the PR.
-  bool mute = 2;
+  /// Mute or unmute the PR. Unset means no change.
+  optional bool mute = 2;
 }
 
 message Match {
@@ -31,4 +31,6 @@ message Match {
   string title = 1;
   /// A string that matches any of the reviewers.
   string reviewer = 2;
+  /// A string that should match the author login of the PR.
+  string author = 3;
 }

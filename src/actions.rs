@@ -33,11 +33,12 @@ impl Act for config::Action {
         if self.matches.is_empty() {
             return Some(pr);
         }
+        // any will stop processing on the first match.
         if !self.matches.iter().any(|m| is_match(m, &pr)) {
             return Some(pr);
         }
-        if self.mute {
-            pr.meta.default_mute = true
+        if let Some(mute) = self.mute {
+            pr.meta.default_mute = mute;
         }
         Some(pr)
     }
@@ -57,6 +58,11 @@ fn is_match(m: &Match, pr: &PullRequest) -> bool {
                 || r.slug.contains(&m.reviewer)
         });
         if !has_reviewer {
+            return false;
+        }
+    }
+    if !m.author.is_empty() {
+        if !pr.author.login.contains(&m.author) {
             return false;
         }
     }
