@@ -143,11 +143,16 @@ pub fn print_pull_requests<W: Write>(
             .find(|q| q.query_name == pr.meta.label)
             .map(|q| q.short_name.as_str())
             .unwrap_or(" ");
+        let short_label = if mute {
+            format!("_")
+        } else {
+            format!("{} ", short_label)
+        };
 
         let left_parts = vec![
             flag_string,
             format!("{:<width$}", pr.repository.name, width = repo_name_max_len),
-            short_label.to_string(),
+            short_label,
             format!("#{:<5}", pr.number),
             pr.title.clone(),
         ];
