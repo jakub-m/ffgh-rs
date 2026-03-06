@@ -1,14 +1,43 @@
 use crate::config::Config;
-use crate::gh::{Meta, PullRequest, ReviewRequest};
+use crate::gh::{Author, Meta, PullRequest, Repository, ReviewRequest};
 use crate::storage::Storage;
 use anyhow::Result;
+use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
 use tokio::time;
 
-const JSON_FIELDS: &str =
-    "author,body,commentsCount,createdAt,id,number,repository,state,title,updatedAt,url";
+const GRAPHQL_QUERY: &str = r#"
+query($q: String!) {
+  search(query: $q, type: ISSUE, first: 100) {
+    nodes {
+      ... on PullRequest {
+        author { login }
+        body
+        comments { totalCount }
+        createdAt
+        id
+        number
+        repository { name nameWithOwner }
+        title
+        updatedAt
+        url
+        state
+        reviewRequests(first: 100) {
+          nodes {
+            requestedReviewer {
+              ... on User { login }
+              ... on Team { name slug }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"#;
 
 pub struct Synchronizer<S: Storage> {
     storage: S,
@@ -100,66 +129,139 @@ fn select_pr_with_attribution_priority(
     selected
 }
 
-async fn get_prs(query: &str, meta_label: &str, mute: bool) -> Result<Vec<PullRequest>> {
-    log::debug!(
-        "Executing gh command: gh search prs --draft=false --state=open {} --json {}",
-        query,
-        JSON_FIELDS
-    );
+async fn get_prs(github_arg: &str, meta_label: &str, mute: bool) -> Result<Vec<PullRequest>> {
+    let search_qualifier = github_arg.trim_start_matches("--").replacen('=', ":", 1);
+    let search_query = format!("is:pr is:open draft:false {}", search_qualifier);
+
+    log::debug!("Executing GraphQL search: {}", search_query);
 
     let output = Command::new("gh")
-        .args(&[
-            "search",
-            "prs",
-            "--draft=false",
-            "--state=open",
-            query,
-            "--json",
-            JSON_FIELDS,
+        .args([
+            "api",
+            "graphql",
+            "-f",
+            &format!("query={}", GRAPHQL_QUERY),
+            "-f",
+            &format!("q={}", search_query),
         ])
         .output()?;
 
     if !output.status.success() {
         return Err(anyhow::anyhow!(
-            "gh command failed: {}",
+            "gh api graphql failed: {}",
             String::from_utf8_lossy(&output.stderr)
         ));
     }
 
-    let mut prs: Vec<PullRequest> = serde_json::from_slice(&output.stdout)?;
+    let response: GqlResponse = serde_json::from_slice(&output.stdout)?;
 
-    for pr in &mut prs {
-        pr.meta = Meta {
-            label: meta_label.to_string(),
-            default_mute: mute,
-        };
-        pr.review_requests = get_review_requests(&pr.url);
-    }
+    let prs = response
+        .data
+        .search
+        .nodes
+        .into_iter()
+        .map(|node| to_pull_request(node, meta_label, mute))
+        .collect();
 
     Ok(prs)
 }
 
-fn get_review_requests(pr_url: &str) -> Vec<ReviewRequest> {
-    let output = Command::new("gh")
-        .args(&["pr", "view", pr_url, "--json", "reviewRequests"])
-        .output();
-
-    let output = match output {
-        Ok(o) if o.status.success() => o,
-        _ => {
-            log::warn!("Failed to fetch reviewers for {}", pr_url);
-            return Vec::new();
-        }
-    };
-
-    #[derive(serde::Deserialize)]
-    struct Wrapper {
-        #[serde(rename = "reviewRequests", default)]
-        review_requests: Vec<ReviewRequest>,
+fn to_pull_request(gql: GqlPullRequest, meta_label: &str, mute: bool) -> PullRequest {
+    PullRequest {
+        author: Author {
+            login: gql.author.map(|a| a.login).unwrap_or_default(),
+            ..Default::default()
+        },
+        body: gql.body.unwrap_or_default(),
+        comments_count: gql.comments.total_count,
+        created_at: gql.created_at,
+        id: gql.id,
+        number: gql.number,
+        repository: gql.repository,
+        title: gql.title,
+        updated_at: gql.updated_at,
+        url: gql.url,
+        state: gql.state,
+        review_requests: gql
+            .review_requests
+            .nodes
+            .into_iter()
+            .filter_map(|n| n.requested_reviewer)
+            .map(|r| ReviewRequest {
+                login: r.login,
+                name: r.name,
+                slug: r.slug,
+            })
+            .collect(),
+        meta: Meta {
+            label: meta_label.to_string(),
+            default_mute: mute,
+        },
     }
-
-    serde_json::from_slice::<Wrapper>(&output.stdout)
-        .map(|w| w.review_requests)
-        .unwrap_or_default()
 }
 
+#[derive(Deserialize)]
+struct GqlResponse {
+    data: GqlData,
+}
+
+#[derive(Deserialize)]
+struct GqlData {
+    search: GqlSearch,
+}
+
+#[derive(Deserialize)]
+struct GqlSearch {
+    nodes: Vec<GqlPullRequest>,
+}
+
+#[derive(Deserialize)]
+struct GqlPullRequest {
+    author: Option<GqlAuthor>,
+    body: Option<String>,
+    comments: GqlComments,
+    #[serde(rename = "createdAt")]
+    created_at: DateTime<Utc>,
+    id: String,
+    number: i32,
+    repository: Repository,
+    title: String,
+    #[serde(rename = "updatedAt")]
+    updated_at: DateTime<Utc>,
+    url: String,
+    state: String,
+    #[serde(rename = "reviewRequests")]
+    review_requests: GqlReviewRequests,
+}
+
+#[derive(Deserialize)]
+struct GqlAuthor {
+    login: String,
+}
+
+#[derive(Deserialize)]
+struct GqlComments {
+    #[serde(rename = "totalCount")]
+    total_count: i32,
+}
+
+#[derive(Deserialize)]
+struct GqlReviewRequests {
+    nodes: Vec<GqlReviewRequestNode>,
+}
+
+#[derive(Deserialize)]
+struct GqlReviewRequestNode {
+    #[serde(rename = "requestedReviewer")]
+    requested_reviewer: Option<GqlRequestedReviewer>,
+}
+
+#[derive(Deserialize)]
+struct GqlRequestedReviewer {
+    #[serde(default)]
+    login: String,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    slug: String,
+}

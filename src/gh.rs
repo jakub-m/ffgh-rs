@@ -1,14 +1,17 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Author {
+    #[serde(default)]
     pub id: String,
-    #[serde(rename = "is_bot")]
+    #[serde(default, rename = "is_bot")]
     pub is_bot: bool,
+    #[serde(default)]
     pub login: String,
-    #[serde(rename = "type")]
+    #[serde(default, rename = "type")]
     pub author_type: String,
+    #[serde(default)]
     pub url: String,
 }
 
