@@ -20,6 +20,16 @@ pub struct Repository {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReviewRequest {
+    #[serde(default)]
+    pub login: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub slug: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PullRequest {
     pub author: Author,
     pub body: String,
@@ -35,6 +45,8 @@ pub struct PullRequest {
     pub updated_at: DateTime<Utc>,
     pub url: String,
     pub state: String,
+    #[serde(rename = "reviewRequests", default)]
+    pub review_requests: Vec<ReviewRequest>,
     #[serde(rename = "_meta", default)]
     pub meta: Meta,
 }

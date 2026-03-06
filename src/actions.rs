@@ -50,5 +50,15 @@ fn is_match(m: &Match, pr: &PullRequest) -> bool {
             return false;
         }
     }
+    if !m.reviewer.is_empty() {
+        let has_reviewer = pr.review_requests.iter().any(|r| {
+            r.login.contains(&m.reviewer)
+                || r.name.contains(&m.reviewer)
+                || r.slug.contains(&m.reviewer)
+        });
+        if !has_reviewer {
+            return false;
+        }
+    }
     true
 }

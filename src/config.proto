@@ -29,4 +29,6 @@ message Action {
 message Match {
   /// A string that should match the subject of the PR.
   string title = 1;
+  /// A string that matches any of the reviewers.
+  string reviewer = 2;
 }

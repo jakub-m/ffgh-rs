@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::gh::{Meta, PullRequest};
+use crate::gh::{Meta, PullRequest, ReviewRequest};
 use crate::storage::Storage;
 use anyhow::Result;
 use std::collections::HashMap;
@@ -133,8 +133,33 @@ async fn get_prs(query: &str, meta_label: &str, mute: bool) -> Result<Vec<PullRe
             label: meta_label.to_string(),
             default_mute: mute,
         };
+        pr.review_requests = get_review_requests(&pr.url);
     }
 
     Ok(prs)
+}
+
+fn get_review_requests(pr_url: &str) -> Vec<ReviewRequest> {
+    let output = Command::new("gh")
+        .args(&["pr", "view", pr_url, "--json", "reviewRequests"])
+        .output();
+
+    let output = match output {
+        Ok(o) if o.status.success() => o,
+        _ => {
+            log::warn!("Failed to fetch reviewers for {}", pr_url);
+            return Vec::new();
+        }
+    };
+
+    #[derive(serde::Deserialize)]
+    struct Wrapper {
+        #[serde(rename = "reviewRequests", default)]
+        review_requests: Vec<ReviewRequest>,
+    }
+
+    serde_json::from_slice::<Wrapper>(&output.stdout)
+        .map(|w| w.review_requests)
+        .unwrap_or_default()
 }
 
