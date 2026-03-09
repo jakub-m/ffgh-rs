@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::gh::{Author, Meta, PullRequest, Repository, ReviewRequest};
+use crate::gh::{Author, Meta, PullRequest, Repository, Review, ReviewRequest};
 use crate::storage::Storage;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -31,6 +31,12 @@ query($q: String!) {
               ... on User { login }
               ... on Team { name slug }
             }
+          }
+        }
+        latestReviews(first: 100) {
+          nodes {
+            author { login }
+            state
           }
         }
       }
@@ -193,6 +199,15 @@ fn to_pull_request(gql: GqlPullRequest, meta_label: &str, mute: bool) -> PullReq
                 slug: r.slug,
             })
             .collect(),
+        latest_reviews: gql
+            .latest_reviews
+            .nodes
+            .into_iter()
+            .map(|r| Review {
+                author_login: r.author.map(|a| a.login).unwrap_or_default(),
+                state: r.state,
+            })
+            .collect(),
         meta: Meta {
             label: meta_label.to_string(),
             default_mute: mute,
@@ -232,6 +247,8 @@ struct GqlPullRequest {
     state: String,
     #[serde(rename = "reviewRequests")]
     review_requests: GqlReviewRequests,
+    #[serde(rename = "latestReviews")]
+    latest_reviews: GqlLatestReviews,
 }
 
 #[derive(Deserialize)]
@@ -264,4 +281,15 @@ struct GqlRequestedReviewer {
     name: String,
     #[serde(default)]
     slug: String,
+}
+
+#[derive(Deserialize)]
+struct GqlLatestReviews {
+    nodes: Vec<GqlReviewNode>,
+}
+
+#[derive(Deserialize)]
+struct GqlReviewNode {
+    author: Option<GqlAuthor>,
+    state: String,
 }

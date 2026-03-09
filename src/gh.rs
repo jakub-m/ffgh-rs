@@ -33,6 +33,14 @@ pub struct ReviewRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Review {
+    #[serde(default)]
+    pub author_login: String,
+    #[serde(default)]
+    pub state: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PullRequest {
     pub author: Author,
     pub body: String,
@@ -50,6 +58,8 @@ pub struct PullRequest {
     pub state: String,
     #[serde(rename = "reviewRequests", default)]
     pub review_requests: Vec<ReviewRequest>,
+    #[serde(rename = "latestReviews", default)]
+    pub latest_reviews: Vec<Review>,
     #[serde(rename = "_meta", default)]
     pub meta: Meta,
 }

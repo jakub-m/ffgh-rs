@@ -6,8 +6,8 @@ fn main() -> Result<()> {
         ".",
         //"\n",
         vec![
-            "#[serde(deny_unknown_fields, default)]",
             "#[derive(serde::Deserialize, serde::Serialize)]",
+            "#[serde(deny_unknown_fields, default)]",
         ]
         .join("\n"),
     );

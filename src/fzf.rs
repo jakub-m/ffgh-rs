@@ -127,6 +127,20 @@ pub fn print_pull_requests<W: Write>(
             flag_string.push_str(NBSP);
         }
 
+        let is_approved = pr
+            .latest_reviews
+            .iter()
+            .any(|r| r.state == "APPROVED");
+        if is_approved {
+            if mute {
+                flag_string.push_str("A");
+            } else {
+                flag_string.push_str(&"A".bright_green().to_string());
+            }
+        } else {
+            flag_string.push_str(NBSP);
+        }
+
         let note = if !pr_state.note.is_empty() {
             if mute {
                 format!(" [{}]", pr_state.note)
@@ -224,6 +238,21 @@ pub fn print_show_pull_request<W: Write>(
             format!("{} comment(s)", pr.comments_count)
                 .yellow()
                 .to_string(),
+            {
+                let approvals: Vec<&str> = pr
+                    .latest_reviews
+                    .iter()
+                    .filter(|r| r.state == "APPROVED")
+                    .map(|r| r.author_login.as_str())
+                    .collect();
+                if approvals.is_empty() {
+                    "Not approved".yellow().to_string()
+                } else {
+                    format!("Approved by {}", approvals.join(", "))
+                        .bright_green()
+                        .to_string()
+                }
+            },
             note,
             String::new(),
             pr.body.clone(),
