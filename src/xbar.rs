@@ -1,6 +1,7 @@
-use crate::fzf::is_mute;
+use crate::fzf::{is_mute, PrettyDuration};
 use crate::gh::PullRequest;
 use crate::storage::{get_pr_state_flags, UserState, HAS_NEW_COMMENTS, IS_NEW, IS_UPDATED};
+use chrono::Utc;
 use std::io::Write;
 
 const P_TOT: &str = "%TOT%";
@@ -68,7 +69,27 @@ pub fn print_compact_summary<W: Write>(
             ),
         ],
     );
-    write!(writer, "{s}")?;
+    writeln!(writer, "{s}")?;
+    writeln!(writer, "---")?;
+
+    let mut visible_prs: Vec<&PullRequest> =
+        prs.iter().filter(|pr| !is_mute(user_state, pr)).collect();
+    visible_prs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+    let now = Utc::now();
+    for pr in &visible_prs {
+        let age = PrettyDuration::from_duration(now - pr.created_at);
+        let title = pr.title.replace('|', "/");
+        let approved = pr.latest_reviews.iter().any(|r| r.state == "APPROVED");
+        let appr = if approved { " \u{2705}" } else { "" };
+        writeln!(
+            writer,
+            "[{repo}] {title} ({age}){appr} | href={url}",
+            repo = pr.repository.name,
+            url = pr.url,
+        )?;
+    }
+
     Ok(())
 }
 

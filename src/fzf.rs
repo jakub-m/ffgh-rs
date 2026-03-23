@@ -321,40 +321,16 @@ impl Display for PrettyDuration {
         let days = total_seconds / 86400;
         let remaining = total_seconds % 86400;
         let hours = remaining / 3600;
-        let remaining = remaining % 3600;
-        let minutes = remaining / 60;
-        let seconds = remaining % 60;
+        let minutes = (remaining % 3600) / 60;
 
         if days > 0 {
-            if hours > 0 || minutes > 0 || seconds > 0 {
-                write!(f, "{}d", days)?;
-                if hours > 0 {
-                    write!(f, "{}h", hours)?;
-                }
-                if minutes > 0 {
-                    write!(f, "{}m", minutes)?;
-                }
-                if seconds > 0 {
-                    write!(f, "{}s", seconds)?;
-                }
-            } else {
-                write!(f, "{}d", days)?;
-            }
+            write!(f, "{}d", days)?;
         } else if hours > 0 {
             write!(f, "{}h", hours)?;
-            if minutes > 0 {
-                write!(f, "{}m", minutes)?;
-            }
-            if seconds > 0 && minutes == 0 {
-                write!(f, "{}s", seconds)?;
-            }
         } else if minutes > 0 {
             write!(f, "{}m", minutes)?;
-            if seconds > 0 {
-                write!(f, "{}s", seconds)?;
-            }
         } else {
-            write!(f, "{}s", seconds)?;
+            write!(f, "{}s", total_seconds)?;
         }
 
         Ok(())
