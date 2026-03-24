@@ -72,8 +72,21 @@ pub fn print_compact_summary<W: Write>(
     writeln!(writer, "{s}")?;
     writeln!(writer, "---")?;
 
-    let mut visible_prs: Vec<&PullRequest> =
-        prs.iter().filter(|pr| !is_mute(user_state, pr)).collect();
+    // Only show PRs that contribute to the counter, so the dropdown matches
+    // what's counted. Caveat: the logic filtering the menu is coupled with
+    // concrete style of the counter P_MAX_NEW_UPD_COM, which is bad, but good
+    // enough.
+    let mut visible_prs: Vec<&PullRequest> = prs
+        .iter()
+        .filter(|pr| {
+            if is_mute(user_state, pr) {
+                return false;
+            }
+            let pr_state = user_state.per_url.get(&pr.url).cloned().unwrap_or_default();
+            let flags = get_pr_state_flags(pr, &pr_state);
+            flags & (IS_NEW | IS_UPDATED | HAS_NEW_COMMENTS) != 0
+        })
+        .collect();
     visible_prs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
 
     let now = Utc::now();
