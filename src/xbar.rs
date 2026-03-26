@@ -97,7 +97,7 @@ pub fn print_compact_summary<W: Write>(
         let appr = if approved { " \u{2705}" } else { "" };
         writeln!(
             writer,
-            "[{repo}] {title} ({age}){appr} | href={url}",
+            "[{repo}]{appr} ({age}): {title} | href={url}",
             repo = pr.repository.name,
             url = pr.url,
         )?;
