@@ -33,4 +33,6 @@ message Match {
   string reviewer = 2;
   /// A string that should match the author login of the PR.
   string author = 3;
+  /// A string that should match the repository name or nameWithOwner of the PR.
+  string repository = 4;
 }

@@ -66,5 +66,12 @@ fn is_match(m: &Match, pr: &PullRequest) -> bool {
             return false;
         }
     }
+    if !m.repository.is_empty() {
+        if !pr.repository.name.contains(&m.repository)
+            && !pr.repository.name_with_owner.contains(&m.repository)
+        {
+            return false;
+        }
+    }
     true
 }
