@@ -42,7 +42,22 @@ enum Commands {
     #[command(name = "fzf")]
     Fzf,
     #[command(name = "cli")]
-    Cli,
+    Cli {
+        #[arg(
+            short = 'r',
+            long,
+            help = "Mark the given URLs as opened instead of listing PRs"
+        )]
+        mark_open: bool,
+        #[arg(
+            short = 'm',
+            long,
+            help = "Mark the given URLs as muted instead of listing PRs"
+        )]
+        mark_mute: bool,
+        #[arg(help = "URLs to mark")]
+        urls: Vec<String>,
+    },
     #[command(name = "show-compact-summary")]
     ShowCompactSummary,
     #[command(name = "show-pr")]
@@ -149,11 +164,32 @@ async fn main() -> Result<()> {
                 &config,
             )?;
         }
-        Commands::Cli => {
-            let prs = storage.get_pull_requests()?;
-            let prs = actions::apply_actions(&config, &prs);
-            let user_state = storage.get_user_state()?;
-            cli::print_pull_requests(&mut io::stdout(), &prs, &user_state)?;
+        Commands::Cli {
+            mark_open,
+            mark_mute,
+            urls,
+        } => {
+            let mutating_action = mark_mute || mark_open;
+            if mutating_action {
+                for url in &urls {
+                    if mark_open {
+                        storage.mark_url_as_opened(url)?;
+                    }
+                    if mark_mute {
+                        storage.mark_url_as_muted(url)?;
+                    }
+                }
+            } else {
+                if urls.is_empty() {
+                    // List PRs
+                    let prs = storage.get_pull_requests()?;
+                    let prs = actions::apply_actions(&config, &prs);
+                    let user_state = storage.get_user_state()?;
+                    cli::print_pull_requests(&mut io::stdout(), &prs, &user_state)?;
+                } else {
+                    return Err(anyhow::anyhow!("Specified URLs without mutating action"));
+                }
+            }
         }
         Commands::ShowCompactSummary => {
             let prs = storage.get_pull_requests()?;
