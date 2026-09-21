@@ -4,7 +4,8 @@ use clap::{Parser, Subcommand};
 use colored::control;
 use ffgh::actions;
 use ffgh::{
-    config::Config, fzf, storage::FileStorage, storage::Storage, sync::Synchronizer, util, xbar,
+    cli, config::Config, fzf, storage::FileStorage, storage::Storage, sync::Synchronizer, util,
+    xbar,
 };
 use std::env;
 use std::fs;
@@ -40,6 +41,8 @@ enum Commands {
     },
     #[command(name = "fzf")]
     Fzf,
+    #[command(name = "cli")]
+    Cli,
     #[command(name = "show-compact-summary")]
     ShowCompactSummary,
     #[command(name = "show-pr")]
@@ -145,6 +148,12 @@ async fn main() -> Result<()> {
                 &user_state,
                 &config,
             )?;
+        }
+        Commands::Cli => {
+            let prs = storage.get_pull_requests()?;
+            let prs = actions::apply_actions(&config, &prs);
+            let user_state = storage.get_user_state()?;
+            cli::print_pull_requests(&mut io::stdout(), &prs, &user_state)?;
         }
         Commands::ShowCompactSummary => {
             let prs = storage.get_pull_requests()?;
