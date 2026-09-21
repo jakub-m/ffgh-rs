@@ -22,7 +22,8 @@ pub fn print_pull_requests<W: Write>(
 
     for pr in prs {
         let flags = pr_flags(pr, user_state).join(FLAG_SEPARATOR);
-        writeln!(writer, "{url}\t{flags}", url = pr.url)?;
+        let title = pr.title.replace(FLAG_SEPARATOR, " ");
+        writeln!(writer, "{url}\t{flags}\t{title}", url = pr.url)?;
     }
 
     Ok(())
